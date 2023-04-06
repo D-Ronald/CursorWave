@@ -11,28 +11,39 @@ import cv2
 import mediapipe as mp
 import pyautogui
 
+#Inicializa a captura de vídeo
 cam = cv2.VideoCapture(0)
+
 hand = mp.solutions.hands
+#Define o número máximo de mãos que serão detectadas
 Hand = hand.Hands(max_num_hands= 1)
-desenho = mp.solutions.drawing_utils
+#cria um objeto para desenhar os pontos e linhas
+Sketch = mp.solutions.drawing_utils
 
 while True:
+    #"check" retorna um booleano se a captura foi feita com sucesso, caso verdadeiro, "img" recebe a imagem capturada
     check,img= cam.read()
+    #Converte a imagem capturada para RGB
     imgRGB = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+    #Processa a imagem capturada
     results = Hand.process(imgRGB)
     handsPoints = results.multi_hand_landmarks
-    h , w, _ = img.shape
     points = []
-
+    #Captura as dimensões da imagem capturada
+    h , w, _ = img.shape
     #Parâmetros para ajuste de área (pode variar de acordo com o tamanho do seu monitor)
     mutiplyW = 1920
     mutiplyH = 3000
 
     if handsPoints:
-        for i in handsPoints:
-            desenho.draw_landmarks(img, i,hand.HAND_CONNECTIONS)
-            for id, coord in enumerate( i.landmark):
+        for auxPoints in handsPoints:
+            #Desenha as linhas que ligam os pontos da mão
+            Sketch.draw_landmarks(img, auxPoints,hand.HAND_CONNECTIONS)
+            #adiciona os numeros dos pontos presentes na mão
+            for id, coord in enumerate( auxPoints.landmark):
+                #Captura as coordenadas da imagem capturada
                 ncX,ncY = int(coord.x *w), int(coord.y*h )
+                #mutiplicando as coordenadas para ajustar a área de movimentação do cursor
                 cX, cY= int(coord.x * mutiplyW), int(coord.y * mutiplyH)
                 if cX!=0:
                     #FUNÇÃO DE INVERSÃO
@@ -43,15 +54,16 @@ while True:
                     cY=1
                 elif cY > mutiplyH:
                     cY = mutiplyH
-
+                #Imprime na imagem os numeros dos pontos, econfigura a posição do texto e caracteristicas
                 cv2.putText(img, str(id),(ncX,ncY+10),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),2)
 
                 print(cX,cY)
+                #Adiciona as coordenadas a um array
                 points.append((cX, cY))
 
         #Colocando o ponto 8 no array
         pointer= [8]
-        if i:
+        if auxPoints:
             #Capturando a posição do ponto
             for x in pointer:
                 posX = points[x][0]
